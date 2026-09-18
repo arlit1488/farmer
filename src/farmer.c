@@ -15,6 +15,9 @@
 #define FISH 9
 #define MAX_ITEM_ID FISH   // максимальный ID предмета
 
+#define MAX_ITEM_ID FISH   // максимальный ID предмета
+#define HOURS_PER_DAY 24   // часов в сутках  ← добавить
+
 int current_day = 1;
 int current_time = 8;
 
@@ -128,8 +131,8 @@ int main(void)
     {
         if (current_time >= 24)
         {
-            current_day = current_day + current_time / 24;
-            current_time = current_time % 24;
+            current_day = current_day + current_time / HOURS_PER_DAY;
+            current_time = current_time % HOURS_PER_DAY;
         }
 
         clearScreen(); // очищаем экран каждый раз перед выводом меню
@@ -216,4 +219,5 @@ int main(void)
     }
     return 0;
 }
+
 
