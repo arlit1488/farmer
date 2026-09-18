@@ -30,11 +30,6 @@ void clearScreen(void) {
 #endif
 }
 
-void clear_input(void) {
-    int c;
-    while ((c = getchar()) != '\n' && c != EOF) { }
-}
-
 // Функция для проверки корректности ввода числа
 int getValidatedInput() {
     int value;
@@ -57,10 +52,34 @@ void printItemName(int id) {
         case SEEDS:      printf("семена");      break;
         case IRON:       printf("железо");      break;
         case GOLD:       printf("золото");      break;
+        case WOOL:       printf("шерсть");      break;
+        case MILK:       printf("молоко");      break;
+        case BREAD:      printf("хлеб");        break;
+        case FISH:       printf("рыба");        break;
+        default:         printf("неизвестный"); break;
+    }
+}
+
+// Функция вывода инвентаря
+void showInventory(void) {
+    printf("\nИНВЕНТАРЬ\n");
+    for (int i = 0; i < INVENTORY_SIZE; i++) {
+        printf("Слот %d: [%d]", i, inventory[i]);
+        printf(" (");
+        printItemName(inventory[i]);
+        printf(")");
+        printf("\n");
+    }
+}
+
+// Функция "Положить предмет в слот"
 void putItemInSlot(void) {
     printf("Введите индекс слота (0-%d): ", INVENTORY_SIZE - 1);
     int slot = getValidatedInput();
     
+    if (slot < 0 || slot >= INVENTORY_SIZE) {
+        printf("Ошибка: индекс слота должен быть от 0 до %d!\n", INVENTORY_SIZE - 1);
+        return;
     }
     
     printf("Введите ID предмета (0-%d): ", MAX_ITEM_ID);
@@ -86,9 +105,7 @@ void invertInventory(void) {
     printf("\nИнвентарь ДО\n");
     showInventory();
     
-    // 2. Переворачиваем массив на месте (без дополнительного массива)
-    // Меняем местами элементы с обоих концов к центру
-    // i идёт с начала, j — с конца, встречаются в середине
+    // 2. Переворачиваем массив 
     for (int i = 0, j = INVENTORY_SIZE - 1; i < j; i++, j--) {
         int temp = inventory[i];   // временная переменная для обмена
         inventory[i] = inventory[j];
@@ -105,9 +122,7 @@ void invertInventory(void) {
 int main(void)
 {
     int action = -1;
-    int enter;
     int time;
-    int end;
 
     while (action != 0)
     {
@@ -200,11 +215,5 @@ int main(void)
         }
     }
     return 0;
-}    if (slot < 0 || slot >= INVENTORY_SIZE) {
-        printf("Ошибка: индекс слота должен быть от 0 до %d!\n", INVENTORY_SIZE - 1);
-        return;
-        case WOOL:       printf("шерсть");      break;
-        case MILK:       printf("молоко");      break;
-// Функция "Положить предмет в слот"
-
+}
 
