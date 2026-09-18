@@ -1,0 +1,36 @@
+# === Скомпилированные файлы ===
+*.o
+*.obj
+*.out
+*.exe
+*.bin
+
+# === Исполняемый файл проекта ===
+farmer
+farmer.exe
+
+# === IDE: Visual Studio ===
+.vs/
+*.suo
+*.user
+*.sln
+*.vcxproj
+*.vcxproj.filters
+
+# === IDE: VS Code ===
+.vscode/
+
+# === IDE: CLion ===
+.idea/
+
+# === Временные файлы ===
+*.tmp
+*.temp
+*.swp
+*~
+*.bak
+
+# === Windows ===
+Thumbs.db
+desktop.ini
+
