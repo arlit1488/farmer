@@ -15,7 +15,6 @@
 #define FISH 9
 #define MAX_ITEM_ID FISH   // максимальный ID предмета
 
-#define MAX_ITEM_ID FISH   // максимальный ID предмета
 #define HOURS_PER_DAY 24   // часов в сутках  ← добавить
 
 int current_day = 1;
