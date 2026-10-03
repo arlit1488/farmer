@@ -13,31 +13,3 @@
 Не используя других (дополнительных) массивов, перевернуть инвентарь
 задом наперёд (элемент 0 меняется с 9, 1 с 8 и т.д.).
 Вывести инвентарь до и после преобразования.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                                            [ New File ]
-^G Help       ^O Write Out  ^F Where Is   ^K Cut        ^T Execute    ^C Location   M-U Undo
-^X Exit       ^R Read File  ^\ Replace    ^U Paste      ^J Justify    ^/ Go To Line M-E Redo
