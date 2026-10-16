@@ -7,7 +7,8 @@
 #define MAX_ITEMS       10
 #define MAX_NAME_LEN    32
 #define HOURS_PER_DAY   24
-#define MAX_LINE_LEN    256
+#define MAX_LINE_LEN    512
+#define MAX_OUTPUT_LINE_LEN 1024
 
 // ID предметов
 #define EMPTY_SLOT  0
@@ -27,6 +28,12 @@
 #define DIARY_FILE   "diary.txt"
 #define INPUT_FILE   "input.txt"
 #define OUTPUT_FILE  "output.txt"
+
+// Теги шаблонизатора NPC
+#define TAG_NAME     "<NAME>"
+#define TAG_DAY      "<DAY>"
+#define TAG_ITEM     "<ITEM>"
+
 
 // ===================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ====================
 char farmer_name[MAX_NAME_LEN] = "Фермер";
@@ -156,31 +163,26 @@ void putItemInSlot(void) {
     printf("Введите индекс слота (0-%d): ", INVENTORY_SIZE - 1);
     int slot = getValidatedInput();
     if (slot < 0 || slot >= INVENTORY_SIZE) {
-        printf("Ошибка: индекс слота должен быть от 0 до %d!\n",
-               INVENTORY_SIZE - 1);
+        printf("Ошибка: индекс слота должен быть от 0 до %d!\n", INVENTORY_SIZE - 1);
         return;
     }
 
     printf("Введите ID предмета (0-%d): ", MAX_ITEM_ID);
     int item_id = getValidatedInput();
     if (item_id < 0 || item_id > MAX_ITEM_ID) {
-        printf("Ошибка: ID предмета должен быть от 0 до %d!\n",
-               MAX_ITEM_ID);
+        printf("Ошибка: ID предмета должен быть от 0 до %d!\n", MAX_ITEM_ID);
         return;
     }
 
     inventory[slot] = item_id;
-    printf("Предмет \"%s\" (ID: %d) помещён в слот %d.\n",
-           getItemName(item_id), item_id, slot);
+    printf("Предмет \"%s\" (ID: %d) помещён в слот %d.\n", getItemName(item_id), item_id, slot);
 }
 
 void throwItemFromSlot(void) {
-    printf("Введите индекс слота для выбрасывания (0-%d): ",
-           INVENTORY_SIZE - 1);
+    printf("Введите индекс слота для выбрасывания (0-%d): ", INVENTORY_SIZE - 1);
     int slot = getValidatedInput();
     if (slot < 0 || slot >= INVENTORY_SIZE) {
-        printf("Ошибка: индекс слота должен быть от 0 до %d!\n",
-               INVENTORY_SIZE - 1);
+        printf("Ошибка: индекс слота должен быть от 0 до %d!\n", INVENTORY_SIZE - 1);
         return;
     }
 
@@ -213,6 +215,134 @@ void invertInventory(void) {
     showInventory();
     
     printf("Инвентарь перевёрнут задом наперёд!\n");
+}
+
+// ======================= ПОИСК ПО НАЗВАНИЮ [7] =======================
+void searchItemByName(void) {
+    char name[MAX_NAME_LEN];
+    getValidatedString(name, MAX_NAME_LEN, "Введите название предмета для поиска: ");
+
+    int id = findItemIdByName(name);
+    if (id < 0) {
+        printf("Предмет \"%s\" не найден в каталоге.\n", name);
+        return;
+    }
+
+    printf("Предмет \"%s\" имеет ID = %d.\n", name, id);
+
+    int found = 0;
+    printf("Найден в слотах: ");
+    for (int i = 0; i < INVENTORY_SIZE; i++) {
+        if (inventory[i] == id) {
+            printf("%d ", i);
+            found++;
+        }
+    }
+
+    if (found == 0) {
+        printf("нет (предмет отсутствует в рюкзаке)\n");
+    } else {
+        printf("\nВсего найдено: %d шт.\n", found);
+    }
+}
+
+// ======================= ДНЕВНИК [8] =======================
+void writeDiary(void) {
+    FILE* file = fopen(DIARY_FILE, "a");   // "a" — дозапись в конец
+    if (file == NULL) {
+        printf("Ошибка: не удалось открыть %s для записи!\n", DIARY_FILE);
+        return;
+    }
+
+    fprintf(file, "\n=== Запись дневника ===\n");
+    fprintf(file, "Фермер: %s\n", farmer_name);
+    fprintf(file, "Время:  День %d, %02d:00\n", current_day, current_time);
+    fprintf(file, "Инвентарь:\n");
+    for (int i = 0; i < INVENTORY_SIZE; i++) {
+        fprintf(file, "  Слот %d: [%d] - %s\n",
+                i, inventory[i], getItemName(inventory[i]));
+    }
+    fprintf(file, "======================\n");
+
+    fclose(file);
+    printf("Состояние записано в файл %s\n", DIARY_FILE);
+}
+
+// ==================== ШАБЛОНИЗАТОР ДИАЛОГОВ NPC [9] ====================
+// Безопасно дописывает строку src в буфер dest
+void appendToBuffer(char* dest, size_t destSize, size_t* pos, const char* src) {
+    while (*src != '\0' && *pos < destSize - 1) {
+        dest[*pos] = *src;
+        (*pos)++;
+        src++;
+    }
+    dest[*pos] = '\0';
+}
+
+// Заменяет в строке src теги <NAME>, <DAY>, <ITEM>
+void replaceNpcTags(const char* src, char* dest, size_t destSize) {
+    size_t pos = 0;
+    dest[0] = '\0';
+
+    for (size_t i = 0; src[i] != '\0'; ) {
+        if (strncmp(&src[i], TAG_NAME, strlen(TAG_NAME)) == 0) {
+            appendToBuffer(dest, destSize, &pos, farmer_name);
+            i += strlen(TAG_NAME);
+        }
+        else if (strncmp(&src[i], TAG_DAY, strlen(TAG_DAY)) == 0) {
+            char dayBuf[16];
+            snprintf(dayBuf, sizeof(dayBuf), "%d", current_day);
+            appendToBuffer(dest, destSize, &pos, dayBuf);
+            i += strlen(TAG_DAY);
+        }
+        else if (strncmp(&src[i], TAG_ITEM, strlen(TAG_ITEM)) == 0) {
+            appendToBuffer(dest, destSize, &pos, getItemName(inventory[0]));
+            i += strlen(TAG_ITEM);
+        }
+        else {
+            if (pos < destSize - 1) {
+                dest[pos] = src[i];
+                pos++;
+                dest[pos] = '\0';
+            }
+            i++;
+        }
+    }
+}
+
+// Читает input.txt, заменяет теги, выводит на экран и пишет output.txt
+void processNpcTemplate(void) {
+    FILE* in = fopen(INPUT_FILE, "r");
+    if (in == NULL) {
+        printf("Ошибка: не удалось открыть %s для чтения!\n", INPUT_FILE);
+        printf("Создайте файл %s с текстом письма NPC.\n", INPUT_FILE);
+        return;
+    }
+
+    FILE* out = fopen(OUTPUT_FILE, "w");
+    if (out == NULL) {
+        printf("Ошибка: не удалось открыть %s для записи!\n", OUTPUT_FILE);
+        fclose(in);
+        return;
+    }
+
+    char line[MAX_LINE_LEN];
+    char result[MAX_OUTPUT_LINE_LEN];
+
+    printf("\n=== Персонализированное письмо NPC ===\n");
+
+    while (fgets(line, sizeof(line), in) != NULL) {
+        replaceNpcTags(line, result, sizeof(result));
+        printf("%s", result);
+        fputs(result, out);
+    }
+
+    printf("\n=== Конец письма ===\n");
+
+    fclose(in);
+    fclose(out);
+
+    printf("Результат сохранён в файл %s\n", OUTPUT_FILE);
 }
 
 // ====================== MAIN ====================
@@ -248,6 +378,9 @@ int main(void)
         printf("[4] Положить предмет в слот\n");
         printf("[5] Выбросить предмет\n");
         printf("[6] Инверсия карманов\n");
+        printf("[7] Поиск предмета по названию\n");
+        printf("[8] Записать состояние в дневник\n");
+        printf("[9] Расшифровать старые записи\n");
         printf("Выберите действие: ");
         action = getValidatedInput();
 
@@ -300,6 +433,23 @@ int main(void)
             // шестое действие - вариант "Инверсия карманов"
             case 6:
                 invertInventory();
+                printf("Нажмите Enter для продолжения...");
+                getchar();
+                break;
+                
+            case 7:
+                searchItemByName();
+                printf("Нажмите Enter для продолжения...");
+                getchar();
+                break;
+
+            case 8:
+                writeDiary();
+                printf("Нажмите Enter для продолжения...");
+                getchar();
+                break;
+            case 9:
+                processNpcTemplate();
                 printf("Нажмите Enter для продолжения...");
                 getchar();
                 break;
