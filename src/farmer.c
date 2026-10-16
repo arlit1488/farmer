@@ -32,8 +32,7 @@
 char farmer_name[MAX_NAME_LEN] = "Фермер";
 int  current_day  = 1;
 int  current_time = 8;
-int  inventory[INVENTORY_SIZE] = {WOOD, STONE, WOOD, SEEDS, STONE,
-                                  WOOD, IRON, STONE, SEEDS, EMPTY_SLOT};
+int  inventory[INVENTORY_SIZE] = {WOOD, STONE, WOOD, SEEDS, STONE, WOOD, IRON, STONE, SEEDS, EMPTY_SLOT};
 // Каталог названий предметов: item_names[ID] = "Название"
 char item_names[MAX_ITEMS][MAX_NAME_LEN];
 
@@ -222,8 +221,15 @@ int main(void)
     int action = -1;
     int time;
 
+    clearScreen();
+    printf("=== Добро пожаловать в игру «Весёлый фермер» ===\n\n");
+    getValidatedString(farmer_name, MAX_NAME_LEN,"Как вас зовут, фермер? ");
+
     loadItemNames();
-    
+
+    printf("\nНажмите Enter, чтобы продолжить...");
+    getchar();
+
     while (action != 0)
     {
         if (current_time >= 24)
@@ -234,6 +240,7 @@ int main(void)
 
         clearScreen(); // очищаем экран каждый раз перед выводом меню
 
+        printf("Фермер: %s\n", farmer_name);
         printf("[0] Выход\n");
         printf("[1] Посмотреть на часы\n");
         printf("[2] Промотать время (Поработать)\n");
