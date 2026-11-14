@@ -12,7 +12,7 @@ enum MenuAction {
     ACT_SEARCH = 7,
     ACT_TIME_MENU = 8,
     ACT_DIARY = 9,
-    ACT_NPC = 10,
+    ACT_NPC = 10, 
     ACT_ADVENTURE = 11,
     ACT_BUY_OIL = 12
 };
