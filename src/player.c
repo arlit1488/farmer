@@ -119,3 +119,4 @@ void searchItemByName(struct Player *p, char item_names[MAX_ITEMS][MAX_NAME_LEN]
     }
     printf(found > 0 ? "\n" : "нет\n");
 }
+ 
