@@ -38,7 +38,7 @@ void destroyMap(struct Map **m) {
 }
 
 void playAdventure(struct Player *p, int *day, int *hour) {
-    // Проверки на допуск
+    // Проверка допуска
     if (p->stamina <= 0) { printf("Вы слишком устали для похода!\n"); return; }
     if (*hour >= 2 && *hour < 8) { printf("Сейчас ночь, фермер должен спать!\n"); return; }
 
@@ -59,8 +59,21 @@ void playAdventure(struct Player *p, int *day, int *hour) {
 
     while (1) {
         clearScreen();
+        
+        // Отрисовка HUD
+        const char* mode_str = "Погашен";
+        if (p->lantern.oil > 0) {
+            if (p->lantern.mode == LIGHT_NORMAL) mode_str = "Обычный";
+            else if (p->lantern.mode == LIGHT_BRIGHT) mode_str = "Яркий";
+            else mode_str = "Погашен (включите F)";
+        } else {
+            mode_str = "НЕТ МАСЛА (Тьма)";
+        }
+
         printf("HP: %d/%d | Выносливость: %d/%d | Золото: %d | Этаж: %d | Время: %02d:00\n", 
                p->hp, p->max_hp, p->stamina, p->max_stamina, p->gold, m->depth, *hour);
+        printf("Фонарь: Масло %d/%d | Режим: %s\n", p->lantern.oil, p->lantern.max_oil, mode_str);
+        printf("--------------------------------------------------\n");
         
         for (int y = 0; y < m->height; y++) {
             for (int x = 0; x < m->width; x++) {
@@ -69,10 +82,29 @@ void playAdventure(struct Player *p, int *day, int *hour) {
             }
             printf("\n");
         }
-        printf("W/A/S/D - движение, Q - выйти домой\nВаш ход: ");
+        printf("W/A/S/D - шаг, F - режим фонаря, Q - выйти\nВаш ход: ");
         
         char move; scanf(" %c", &move); while (getchar() != '\n');
         
+        // Переключение фонаря
+        if (move == 'F' || move == 'f') {
+            if (p->lantern.oil <= 0) {
+                printf("\nВ фонаре нет масла! Купите его в меню.\nНажмите Enter..."); getchar();
+                continue;
+            }
+            printf("\n--- РЕЖИМ ФОНАРЯ ---\n");
+            printf("1. Погасить (0 масла/шаг)\n");
+            printf("2. Обычный свет (1 масло/шаг)\n");
+            printf("3. Яркий свет (3 масла/шаг, +50%% золота)\n");
+            printf("Выбор: ");
+            int fm = getValidatedInput();
+            if (fm == 1) p->lantern.mode = LIGHT_OFF;
+            else if (fm == 2) p->lantern.mode = LIGHT_NORMAL;
+            else if (fm == 3) p->lantern.mode = LIGHT_BRIGHT;
+            continue;
+        }
+
+        // Выход из приключения
         if (move == 'Q' || move == 'q') {
             printf("Вы вернулись домой с %d золота!\n", p->gold);
             destroyMap(&m);
@@ -86,21 +118,45 @@ void playAdventure(struct Player *p, int *day, int *hour) {
         else if (move == 'D' || move == 'd') new_x++;
         else continue;
 
+        // Проверка границ и препятствий
         if (new_y < 0 || new_y >= m->height || new_x < 0 || new_x >= m->width) continue;
         char target = m->grid[new_y][new_x];
         if (target == T_WALL || target == T_TREE || target == T_ROCK) continue;
 
-        p->stamina--; // Трата выносливости за шаг
+        // 1. Трата стамины за шаг
+        p->stamina--;
+
+        // 2. Расход масла
+        if (p->lantern.mode == LIGHT_NORMAL) p->lantern.oil -= 1;
+        else if (p->lantern.mode == LIGHT_BRIGHT) p->lantern.oil -= 3;
+
+        if (p->lantern.oil < 0) p->lantern.oil = 0;
         
+        // Если масло кончилось, а режим был включен — тушим
+        if (p->lantern.oil == 0 && p->lantern.mode != LIGHT_OFF) {
+            p->lantern.mode = LIGHT_OFF;
+            printf("\nМасло в фонаре закончилось! Стало темно.\n");
+        }
+
+        // 3. Штраф за темноту (если фонарь погашен)
+        if (p->lantern.mode == LIGHT_OFF) {
+            if (rand() % 100 < 20) {
+                printf("\nВ темноте вы ударились о камни! -5 HP, -2 стамины.\n");
+                p->hp -= 5;
+                p->stamina -= 2;
+                printf("Нажмите Enter..."); getchar();
+            }
+        }
+
         // Скользкий лед
         if (target == T_ICE) {
             printf("Вы наступили на лед!\n");
-            int dy = new_y - old_y, dx = new_x - old_x;
+            int dy_ice = new_y - old_y, dx_ice = new_x - old_x;
             bool stopped = false;
-            p->y = new_y; p->x = new_x; // первый шаг
+            p->y = new_y; p->x = new_x; 
             
             while (!stopped) {
-                int next_y = p->y + dy, next_x = p->x + dx;
+                int next_y = p->y + dy_ice, next_x = p->x + dx_ice;
                 if (next_y < 0 || next_y >= m->height || next_x < 0 || next_x >= m->width) break;
                 
                 char next_tile = m->grid[next_y][next_x];
@@ -120,24 +176,41 @@ void playAdventure(struct Player *p, int *day, int *hour) {
             printf("\nВы спускаетесь глубже...\n");
             p->stamina -= 5;
             (*hour)++;
-            p->gold += BASE_GOLD_REWARD * m->depth;
+            
+            int reward = BASE_GOLD_REWARD * m->depth;
+            // 4. Бонус яркого света
+            if (p->lantern.mode == LIGHT_BRIGHT) {
+                reward = (int)(reward * 1.5);
+                printf("Яркий свет помог найти тайник! Награда увеличена на 50%%.\n");
+            }
+            p->gold += reward;
+            printf("Вы нашли %d золота!\n", reward);
+
+            // ИСПРАВЛЕНИЕ: Сохраняем глубину ДО удаления карты!
+            int next_depth = m->depth + 1; 
+            
             destroyMap(&m);
-            m = createMap(m->depth + 1);
-            // спавн героя и лестницы на новом этаже
+            m = createMap(next_depth);     // Создаем новую карту
+            
+            // Спавн героя и лестницы на новом этаже
             do { p->x = 1 + rand() % (m->width - 2); p->y = 1 + rand() % (m->height - 2); } while (m->grid[p->y][p->x] != T_FLOOR);
             do { dy = 1 + rand() % (m->height - 2); dx = 1 + rand() % (m->width - 2); } while ((dy == p->y && dx == p->x) || m->grid[dy][dx] != T_FLOOR);
             m->grid[dy][dx] = T_DOWN;
             printf("Нажмите Enter..."); getchar();
         }
 
-        // Экстренная эвакуация
-        if (p->stamina <= 0 || (*hour >= 2 && *hour < 8)) {
+        // Экстренная эвакуация (по стамине/времени/HP)
+        if (p->stamina <= 0 || (*hour >= 2 && *hour < 8) || p->hp <= 0) {
             clearScreen();
             printf("\n!!! Экстренная эвакуация !!!\n");
-            if (p->stamina <= 0) printf("Вы упали без сил.\n");
+            if (p->hp <= 0) printf("Вы получили смертельные травмы.\n");
+            else if (p->stamina <= 0) printf("Вы упали без сил.\n");
             else printf("Наступила ночь, вы потеряли сознание.\n");
+            
             p->gold /= 2;
             p->stamina = 0;
+            if (p->hp < 10) p->hp = 10; // Чтобы не умереть окончательно
+            
             printf("Спасатели забрали половину золота. Остаток: %d\n", p->gold);
             destroyMap(&m);
             return;
