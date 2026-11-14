@@ -39,3 +39,4 @@ void searchItemByName(struct Player *p, char item_names[MAX_ITEMS][MAX_NAME_LEN]
 void buyLanternOil(struct Player *p);
 
 #endif // PLAYER_H
+ 
