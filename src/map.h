@@ -29,4 +29,4 @@ struct Map* createMap(int depth);
 void destroyMap(struct Map **m);
 void playAdventure(struct Player *p, int *day, int *hour);
 
-#endif // MAP_H
+#endif // MAP_H 
