@@ -18,59 +18,24 @@ enum MenuAction {
 };
 
 void timeMenu(int *day, int *hour, struct Player *p) {
-    printf("\n--- ВРЕМЯ И СОН ---\n");
-    printf("1. Посмотреть на часы\n");
-    printf("2. Ждать\n");
-    printf("3. Спать\n");
-    printf("Выбор: ");
-    
+    printf("\n1. Посмотреть на часы\n2. Ждать\n3. Спать\nВыбор: ");
     int choice = getValidatedInput();
     
-    switch (choice) {
-        case 1:
-            printf("Текущее время: День %d, %02d:00\n", *day, *hour);
-            break;
-            
-        case 2: {
-            printf("Сколько часов ждать? ");
-            int h = getValidatedInput();
-            
-            if (h <= 0) {
-                printf("Ошибка: нужно ждать хотя бы 1 час!\n");
-                break;
-            }
-            
-            int target = *hour + h;
-            
-            // Проверка: нельзя промотать время через 02:00 ночи
-            if ((*hour < 2 && target >= 2) || (*hour >= 2 && target >= 26)) { 
-                printf("Нельзя ждать до утра, нужно спать!\n"); 
-                break; 
-            }
-            
-            *hour += h;
-            if (*hour >= 24) { 
-                *day += *hour / 24; 
-                *hour %= 24; 
-            }
-            printf("Время продвинулось. Теперь День %d, %02d:00\n", *day, *hour);
-            break;
+    if (choice == 1) {
+        printf("Текущее время: День %d, %02d:00\n", *day, *hour);
+    } else if (choice == 2) {
+
+    } else if (choice == 3) {
+
+        if (p == NULL) {
+            printf("Ошибка: спать некому! Сначала создайте персонажа.\n");
+            return;
         }
-            
-        case 3:
-            (*day)++; 
-            *hour = 8;
-            if (p) { 
-                p->hp = p->max_hp; 
-                p->stamina = p->max_stamina; 
-                printf("Вы отдохнули. HP и Выносливость полностью восстановлены!\n"); 
-            }
-            break;
-            
-        default:
-            // Сюда попадают все числа: 0, 4, 5, -10 и т.д.
-            printf("Ошибка: неверный пункт меню! Введите 1, 2 или 3.\n");
-            break;
+        
+        (*day)++; *hour = 8;
+        p->hp = p->max_hp; 
+        p->stamina = p->max_stamina; 
+        printf("Вы отдохнули. HP и Выносливость восстановлены!\n"); 
     }
 }
 
@@ -86,19 +51,19 @@ int main(void) {
     while (action != ACT_EXIT) {
         clearScreen();
         printf("=== ВЕСЁЛЫЙ ФЕРМЕР | День %d, %02d:00 ===\n", day, hour);
-        printf("[1] Создать / пересоздать персонажа\n");
-        printf("[2] Карточка персонажа\n");
-        printf("[3] Инвентарь\n");
-        printf("[4] Положить предмет\n");
-        printf("[5] Выбросить предмет\n");
-        printf("[6] Инверсия карманов\n");
-        printf("[7] Поиск по названию\n");
-        printf("[8] Время и сон\n");
-        printf("[9] Записать дневник\n");
-        printf("[10] Расшифровать записи\n");
-        printf("[11] Отправиться в приключение\n");
-        printf("[12] Купить масло для фонаря\n");
-        printf("[0] Выход\nВыберите действие: ");
+        printf("[%d] Создать / пересоздать персонажа\n", ACT_CREATE);
+        printf("[%d] Карточка персонажа\n", ACT_CARD);
+        printf("[%d] Инвентарь\n", ACT_INVENTORY);
+        printf("[%d] Положить предмет\n", ACT_PUT);
+        printf("[%d] Выбросить предмет\n", ACT_THROW);
+        printf("[%d] Инверсия карманов\n", ACT_INVERT);
+        printf("[%d] Поиск по названию\n", ACT_SEARCH);
+        printf("[%d] Время и сон\n", ACT_TIME_MENU);
+        printf("[%d] Записать дневник\n", ACT_DIARY);
+        printf("[%d] Расшифровать записи\n", ACT_NPC);
+        printf("[%d] Отправиться в приключение\n", ACT_ADVENTURE);
+        printf("[%d] Купить масло для фонаря\n", ACT_BUY_OIL);
+        printf("[%d] Выход\nВыберите действие: ", ACT_EXIT);
         
         action = getValidatedInput();
 
@@ -109,7 +74,7 @@ int main(void) {
         }
 
         switch(action) {
-            case 1:
+            case ACT_CREATE:
                 if (player != NULL) {
                     printf("Персонаж уже существует. Точно удалить? (1 - Да, 0 - Нет): ");
                     if (getValidatedInput() == 1) {
@@ -120,18 +85,18 @@ int main(void) {
                     player = createPlayer();
                 }
                 break;
-            case 2: printPlayerCard(player, day, hour, item_names); break;
-            case 3: showInventory(player, item_names); break;
-            case 4: putItemInSlot(player, item_names); break;
-            case 5: throwItemFromSlot(player, item_names); break;
-            case 6: invertInventory(player, item_names); break;
-            case 7: searchItemByName(player, item_names); break;
-            case 8: timeMenu(&day, &hour, player); break;
-            case 9: writeDiary(player->name, day, hour, player->inventory, item_names); break;
-            case 10: processNpcTemplate(player->name, day, player->inventory, item_names); break;
-            case 11: playAdventure(player, &day, &hour); break;
-            case 12: buyLanternOil(player); break;
-            case 0: break;
+            case ACT_CARD: printPlayerCard(player, day, hour, item_names); break;
+            case ACT_INVENTORY: showInventory(player, item_names); break;
+            case ACT_PUT: putItemInSlot(player, item_names); break;
+            case ACT_THROW: throwItemFromSlot(player, item_names); break;
+            case ACT_INVERT: invertInventory(player, item_names); break;
+            case ACT_SEARCH: searchItemByName(player, item_names); break;
+            case ACT_TIME_MENU: timeMenu(&day, &hour, player); break;
+            case ACT_DIARY: writeDiary(player->name, day, hour, player->inventory, item_names); break;
+            case ACT_NPC: processNpcTemplate(player->name, day, player->inventory, item_names); break;
+            case ACT_ADVENTURE: playAdventure(player, &day, &hour); break;
+            case ACT_BUY_OIL: buyLanternOil(player); break;
+            case ACT_EXIT: break;
             default: printf("Неверный пункт.\n"); break;
         }
         if (action != 0) { printf("\nНажмите Enter для продолжения..."); getchar(); }
