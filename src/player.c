@@ -7,12 +7,16 @@ struct Player* createPlayer(void) {
     getValidatedString(p->name, MAX_NAME_LEN, "Введите имя фермера: ");
     p->max_hp = 100; p->hp = 100;
     p->max_stamina = 50; p->stamina = 50;
-    p->gold = 0;
+    p->gold = 50;
     p->x = 0; p->y = 0;
     
-    // Стартовый инвентарь
     int start_inv[INVENTORY_SIZE] = {1, 2, 1, 3, 2, 1, 4, 2, 3, 0};
     memcpy(p->inventory, start_inv, sizeof(start_inv));
+
+    // Инициализация фонаря
+    p->lantern.oil = 50;
+    p->lantern.max_oil = 100;
+    p->lantern.mode = LIGHT_OFF;
 
     printf("Персонаж %s успешно создан!\n", p->name);
     return p;
@@ -26,11 +30,41 @@ void destroyPlayer(struct Player **p) {
     }
 }
 
+void buyLanternOil(struct Player *p) {
+    printf("\n=== МАГАЗИН МАСЛА ===\n");
+    printf("У вас %d золота. 1 ед. масла стоит 1 золото.\n", p->gold);
+    printf("В фонаре: %d/%d\n", p->lantern.oil, p->lantern.max_oil);
+    
+    if (p->lantern.oil >= p->lantern.max_oil) {
+        printf("Ваш фонарь уже полон!\n");
+        return;
+    }
+    
+    printf("Сколько масла купить? (0 - отмена): ");
+    int amount = getValidatedInput();
+    if (amount <= 0) return;
+    
+    if (amount > p->gold) {
+        printf("У вас недостаточно золота!\n");
+        return;
+    }
+    
+    if (p->lantern.oil + amount > p->lantern.max_oil) {
+        printf("Фонарь не вмещает столько масла!\n");
+        return;
+    }
+    
+    p->gold -= amount;
+    p->lantern.oil += amount;
+    printf("Вы купили %d ед. масла. Осталось золота: %d\n", amount, p->gold);
+}
+
 void printPlayerCard(struct Player *p, int day, int hour, char item_names[MAX_ITEMS][MAX_NAME_LEN]) {
     printf("\n=== КАРТОЧКА ПЕРСОНАЖА ===\n");
     printf("Имя: %s\n", p->name);
     printf("Время: День %d, %02d:00\n", day, hour);
     printf("HP: %d/%d | Выносливость: %d/%d | Золото: %d\n", p->hp, p->max_hp, p->stamina, p->max_stamina, p->gold);
+    printf("Фонарь: Масло %d/%d\n", p->lantern.oil, p->lantern.max_oil);
     showInventory(p, item_names);
 }
 
